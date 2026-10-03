@@ -1,0 +1,5 @@
+Trailhead — brief for phase 2
+
+Goal: let hikers save a trail for offline use in two taps.
+Constraint: the download must work on a weak connection and resume after it drops.
+Out of scope: social feed, badges.

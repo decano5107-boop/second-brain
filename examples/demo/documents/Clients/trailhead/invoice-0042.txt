@@ -1,0 +1,10 @@
+INVOICE 0042
+
+Client: Trailhead (hiking companion app)
+Project: onboarding redesign, phase 1
+
+Discovery workshop ............................ 1 day
+Onboarding flow, five screens, two rounds ..... fixed
+Usability test with six participants .......... fixed
+
+Payment terms: 30 days from the invoice date.

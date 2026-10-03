@@ -1,0 +1,9 @@
+{
+  "name": "second-brain-marketplace",
+  "owner": { "name": "Diego Cano" },
+  "metadata": { "description": "Second Brain — a plain-Markdown memory for Claude Code.", "version": "0.1.0" },
+  "plugins": [
+    { "name": "second-brain", "source": "./", "version": "0.1.0",
+      "description": "Session capture, a project board, prompt-time pointers to your own notes, a document librarian, domain maps and a wrap-up skill." }
+  ]
+}

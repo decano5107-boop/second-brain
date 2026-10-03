@@ -1,0 +1,117 @@
+"""Generate one map note per domain, plus an index, so the vault reads as a graph.
+
+A map links the domain's projects, its folders under each named root, its most recent session
+notes and document stubs, and its neighbour domains. Maps are regenerated in place, but only
+files this module wrote (`generated: second-brain`) are ever overwritten: a map you wrote or
+edited by hand, or a domain marked `curated`, is left alone.
+"""
+import datetime
+import os
+
+from . import notes
+
+MARKER = notes.MARKER
+INDEX = "_INDEX.md"
+RECENT_SESSIONS = 10
+RECENT_STUBS = 20
+
+
+def _notes_by_domain(folder, want_type):
+    """{domain: [(sort_key, note_name, fields)]} for every note of one type under a folder."""
+    grouped = {}
+    if not os.path.isdir(folder):
+        return grouped
+    for root, dirs, files in os.walk(folder):
+        dirs[:] = [d for d in dirs if not d.startswith(".")]
+        for name in files:
+            if not name.endswith(".md") or name.startswith("."):
+                continue
+            fields = notes.read_frontmatter(os.path.join(root, name), 2048)
+            if fields.get("type") != want_type or not fields.get("domain"):
+                continue
+            key = fields.get("date") or fields.get("modified") or ""
+            grouped.setdefault(fields["domain"], []).append((key, name[:-3], fields))
+    for items in grouped.values():
+        items.sort(reverse=True)
+    return grouped
+
+
+def _section(title, lines):
+    return ["", f"## {title}", *(lines or ["_(none yet)_"])]
+
+
+def render(domain, spec, cfg, sessions, stubs, today):
+    lines = [
+        "---", "type: map", f"domain: {notes.yaml_str(domain)}", f"generated: {MARKER}",
+        f"updated: {today}", "tags: [map]", "---", "", f"# {notes.md_text(domain)}", "",
+    ]
+    if spec["summary"]:
+        lines += [notes.md_text(spec["summary"]), ""]
+    lines.append("← [[_INDEX]] · [[_BOARD]]")
+
+    lines += _section("Projects", [
+        f"- {notes.file_link(p, os.path.join(cfg['projects_root'], p))}" for p in spec["projects"]])
+
+    folder_lines = []
+    for root_name, folders in spec["folders"].items():
+        base = cfg["roots"].get(root_name)
+        for folder in folders:
+            if base:
+                folder_lines.append(f"- {root_name}: {notes.file_link(folder, os.path.join(base, folder))}")
+            else:
+                folder_lines.append(f"- {root_name}: {notes.md_text(folder)} _(root `{root_name}` is not in `roots`)_")
+    lines += _section("Folders", folder_lines)
+
+    lines += _section("Recent sessions", [
+        f"- [[{name}]] — {fields.get('date', '')} · {notes.md_text(fields.get('project', ''))}"
+        for _key, name, fields in sessions[:RECENT_SESSIONS]])
+
+    listed = [f"- [[{name}]] — {notes.md_text(fields.get('title', name))}" for _k, name, fields in stubs[:RECENT_STUBS]]
+    if len(stubs) > RECENT_STUBS:
+        listed.append(f"- _…and {len(stubs) - RECENT_STUBS} more in `stubs/{notes.safe_name(domain)}/`_")
+    lines += _section(f"Documents ({len(stubs)})", listed)
+
+    lines += _section("Neighbors", [" · ".join(f"[[{notes.safe_name(n)}]]" for n in spec["neighbors"])]
+                      if spec["neighbors"] else [])
+    return "\n".join(lines) + "\n"
+
+
+def render_index(cfg, today):
+    lines = ["---", "type: index", f"generated: {MARKER}", f"updated: {today}", "tags: [index]",
+             "---", "", "# Index", "", "- [[_BOARD]] — every project, from its status file", ""]
+    for domain, spec in cfg["domains"].items():
+        summary = f" — {notes.md_text(spec['summary'])}" if spec["summary"] else ""
+        lines.append(f"- [[{notes.safe_name(domain)}]]{summary}")
+    return "\n".join(lines) + "\n"
+
+
+def generate(cfg, today=None, log=print):
+    """Write every non-curated map and the index. Returns the paths written."""
+    if not os.path.isdir(cfg["vault"]):
+        log(f"no vault at {cfg['vault']}; run `python3 -m second_brain init` first")
+        return []
+    today = (today or datetime.date.today()).isoformat()
+    maps_dir = os.path.join(cfg["vault"], "maps")
+    sessions = _notes_by_domain(os.path.join(cfg["vault"], "sessions"), "session")
+    stubs = _notes_by_domain(os.path.join(cfg["vault"], "stubs"), "stub")
+    written, claimed = [], set()
+    for domain, spec in cfg["domains"].items():
+        name = notes.safe_name(domain)
+        path = os.path.join(maps_dir, name + ".md")
+        if name.startswith("_") or name == "untitled" or name.lower() in claimed:
+            log(f"  ! {domain}: the name maps to '{name}.md', which is reserved or taken; skipped")
+            continue
+        claimed.add(name.lower())
+        if spec["curated"]:
+            log(f"  = {domain}: curated, left as is")
+            continue
+        if not notes.write_owned(path, render(domain, spec, cfg, sessions.get(domain, []),
+                                              stubs.get(domain, []), today), cfg["vault"]):
+            log(f"  = {domain}: {path} was not generated by second-brain, left as is")
+            continue
+        written.append(path)
+        log(f"  + {domain}")
+    index = os.path.join(maps_dir, INDEX)
+    if notes.write_owned(index, render_index(cfg, today), cfg["vault"]):
+        written.append(index)
+    return written

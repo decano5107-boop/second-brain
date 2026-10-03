@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "second-brain",
+  "displayName": "Second Brain",
+  "version": "0.1.0",
+  "description": "A plain-Markdown memory for Claude Code: writes a note when each session ends, keeps a board of every project from its STATUS.md, and points the agent at notes you already wrote when a prompt matches them. Deterministic, local, no database and no model calls.",
+  "author": { "name": "Diego Cano" },
+  "homepage": "https://github.com/decano5107-boop/second-brain",
+  "license": "Apache-2.0",
+  "keywords": ["claude-code", "claude-code-plugin", "memory", "obsidian", "markdown", "hooks", "knowledge-management"]
+}

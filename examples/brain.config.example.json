@@ -1,0 +1,46 @@
+{
+  "vault": "~/second-brain",
+  "projects_root": "~/code",
+  "roots": {
+    "inbox": "~/Downloads",
+    "archive": "~/Documents"
+  },
+  "status": {
+    "labels": { "now": "Now", "next": "Next step" },
+    "stale_days": 30
+  },
+  "lookup": {
+    "max_hits": 5,
+    "log": null
+  },
+  "librarian": {
+    "sources": ["~/Documents/Clients", "~/Documents/Research"]
+  },
+  "domains": {
+    "Client-Work": {
+      "summary": "Paid projects: briefs, proposals, deliverables and invoices.",
+      "projects": ["harbor-bakery-rebrand", "trailhead-app"],
+      "folders": { "archive": ["Clients"], "inbox": ["briefs"] },
+      "keywords": ["brief", "proposal", "invoice", "statement of work"],
+      "neighbors": ["Design-System", "Research"]
+    },
+    "Design-System": {
+      "summary": "Tokens, components and the documentation site.",
+      "projects": ["tokens", "component-library"],
+      "folders": { "archive": ["Design System"] },
+      "keywords": ["design token", "component", "figma", "accessibility"],
+      "neighbors": ["Client-Work"]
+    },
+    "Research": {
+      "summary": "User interviews, surveys and synthesis.",
+      "projects": ["interview-kit"],
+      "folders": { "archive": ["Research"], "inbox": ["interviews"] },
+      "keywords": ["interview", "survey", "persona", "usability test"],
+      "neighbors": ["Client-Work"]
+    },
+    "Studio": {
+      "summary": "Running the business: pricing, taxes, contracts. Maintained by hand.",
+      "curated": true
+    }
+  }
+}
